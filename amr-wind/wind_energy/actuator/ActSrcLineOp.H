@@ -1,5 +1,5 @@
-#ifndef ACTSRCOP_H
-#define ACTSRCOP_H
+#ifndef ACTSRCLINEOP_H
+#define ACTSRCLINEOP_H
 
 #include "amr-wind/wind_energy/actuator/actuator_types.H"
 #include "amr-wind/wind_energy/actuator/actuator_ops.H"
@@ -61,8 +61,8 @@ void ActSrcOp<ActTrait, ActSrcLine>::copy_to_device()
         m_force.begin());
     amrex::Gpu::copy(
         amrex::Gpu::hostToDevice, grid.epsilon.begin(), grid.epsilon.end(),
-        m_epsilon.begin());
-    amrex::Gpu::copy(
+m_epsilon.begin());
+amrex::Gpu::copy(
         amrex::Gpu::hostToDevice, grid.orientation.begin(),
         grid.orientation.end(), m_orientation.begin());
 }
@@ -113,4 +113,4 @@ void ActSrcOp<ActTrait, ActSrcLine>::operator()(
 } // namespace actuator
 } // namespace amr_wind
 
-#endif /* ACTSRCOP_H */
+#endif /* ACTSRCLINEOP_H */

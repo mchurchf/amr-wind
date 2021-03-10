@@ -1,5 +1,5 @@
-#ifndef ACTSRCOP_H
-#define ACTSRCOP_H
+#ifndef ACTSRCDISKOP_H
+#define ACTSRCDISKOP_H
 
 #include "amr-wind/wind_energy/actuator/actuator_types.H"
 #include "amr-wind/wind_energy/actuator/actuator_ops.H"
@@ -113,4 +113,4 @@ void ActSrcOp<ActTrait, ActSrcDisk>::operator()(
 } // namespace actuator
 } // namespace amr_wind
 
-#endif /* ACTSRCOP_H */
+#endif /* ACTSRCDISKOP_H */
