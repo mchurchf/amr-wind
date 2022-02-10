@@ -7,3 +7,9 @@
 [submodule "submods/AMReX-Hydro"]
 	path = submods/AMReX-Hydro
 	url = https://github.com/AMReX-Codes/AMReX-Hydro
+[submodule "submods/libzmq"]
+	path = submods/libzmq
+	url = https://github.com/zeromq/libzmq.git
+[submodule "submods/cppzmq"]
+	path = submods/cppzmq
+	url = https://github.com/zeromq/cppzmq.git

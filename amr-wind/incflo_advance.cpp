@@ -9,12 +9,63 @@
 #include "amr-wind/utilities/PostProcessing.H"
 #include "amr-wind/core/field_ops.H"
 #include "AMReX_MultiFabUtil.H"
+#include "zmq.h"
+#include <zmq.hpp>
 
 using namespace amrex;
 
 void incflo::pre_advance_stage1()
 {
     BL_PROFILE("amr-wind::incflo::pre_advance_stage1");
+
+    bool cpp_zmq{false};
+
+    if(cpp_zmq){
+
+        // initialize the zmq context with a single IO thread
+        zmq::context_t context{1};
+
+        // construct a REQ (request) socket and connect to interface
+        zmq::socket_t socket{context, zmq::socket_type::req};
+        socket.connect("tcp://localhost:5555");
+
+        // set up some static data to send
+        const std::string data{"Hello"};
+
+        for (auto request_num = 0; request_num < 10; ++request_num)
+        {
+            // send the request message
+            std::cout << "Sending C++ Hello " << request_num << "..." << std::endl;
+            socket.send(zmq::buffer(data), zmq::send_flags::none);
+
+            // wait for reply from server
+            zmq::message_t reply{};
+            socket.recv(reply, zmq::recv_flags::none);
+
+            std::cout << "Received " << reply.to_string();
+            std::cout << " (" << request_num << ")";
+            std::cout << std::endl;
+        }
+
+    } else {
+
+        printf ("Connecting to hello world server…\n");
+        void *context = zmq_ctx_new ();
+        void *requester = zmq_socket (context, ZMQ_REQ);
+        zmq_connect (requester, "tcp://localhost:5555");
+
+        int request_nbr;
+        for (request_nbr = 0; request_nbr != 10; request_nbr++) {
+            char buffer [10];
+            printf ("Sending C Hello %d…\n", request_nbr);
+            zmq_send (requester, "Hello", 5, 0);
+            zmq_recv (requester, buffer, 10, 0);
+            printf ("Received World %d\n", request_nbr);
+        }
+        zmq_close (requester);
+        zmq_ctx_destroy (context);
+
+    }
 
     // Compute time step size
     bool explicit_diffusion = (m_diff_type == DiffusionType::Explicit);
