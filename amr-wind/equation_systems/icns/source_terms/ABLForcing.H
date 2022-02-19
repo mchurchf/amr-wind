@@ -40,6 +40,12 @@ public:
         m_abl_forcing[1] = (m_target_vel[1] - m_mean_vel[1]) / dt;
     }
 
+    inline void set_target_velocities(amrex::Real ux, amrex::Real uy)
+    {
+        m_target_vel[0] = ux;
+        m_target_vel[1] = uy;
+    }
+
     amrex::RealArray abl_forcing() const { return m_abl_forcing; }
 
     amrex::Real forcing_height() const { return m_forcing_height; }

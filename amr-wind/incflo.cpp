@@ -8,6 +8,7 @@
 #include "amr-wind/utilities/IOManager.H"
 #include "amr-wind/utilities/PostProcessing.H"
 #include "amr-wind/overset/OversetManager.H"
+#include <zmq.h>
 
 #include "AMReX_ParmParse.H"
 
@@ -263,6 +264,23 @@ void incflo::Evolve()
 {
     BL_PROFILE("amr-wind::incflo::Evolve()");
 
+    amrex::Print() << "Connecting to ControlCenter..." << std::endl;
+    m_sim.zmq_context = zmq_ctx_new ();
+    m_sim.zmq_requester = zmq_socket (m_sim.zmq_context, ZMQ_REQ);
+    zmq_connect (m_sim.zmq_requester, "tcp://localhost:1878");
+    amrex::Print() <<"Connected..., entering simulation" << std::endl;
+
+    // Make initial connection to control center to receive the wind speed
+    // and wind direction to use in the 0th time step
+    std::string strToControlCenter; // String that gets sent to ControlCenter
+    char charFromControlCenter [9900]; // char array of what we got back from ControlCenter
+    std::stringstream ssInitialCode; // stringStream used to hold initial code
+    ssInitialCode << -1 << " " << -1; // code should be an array with to -1 values
+    strToControlCenter = ssInitialCode.str(); //Convert to a string
+    amrex::Print() << "initial message to control center: [" << strToControlCenter << "] \n";
+    // Send the data to the control center
+    zmq_send (m_sim.zmq_requester, strToControlCenter.c_str(), 9900, 0);
+
     while (m_time.new_timestep()) {
         amrex::Real time0 = amrex::ParallelDescriptor::second();
 
@@ -292,6 +310,10 @@ void incflo::Evolve()
                               static_cast<amrex::Real>(m_cell_count)
                        << std::endl;
     }
+
+    zmq_close(m_sim.zmq_requester);
+    zmq_ctx_destroy(m_sim.zmq_context);
+
     amrex::Print() << "\n======================================================"
                       "========================\n"
                    << std::endl;

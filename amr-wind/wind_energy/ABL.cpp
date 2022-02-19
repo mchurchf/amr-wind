@@ -9,6 +9,7 @@
 
 #include "AMReX_ParmParse.H"
 #include "AMReX_MultiFab.H"
+#include <zmq.h>
 
 namespace amr_wind {
 
@@ -120,6 +121,32 @@ void ABL::pre_advance_work()
         const amrex::Real vy = vel_pa.line_average_interpolated(zh, 1);
         // Set the mean velocities at the forcing height so that the source
         // terms can be computed during the time integration calls
+
+
+
+        // Wait for a response from control center
+        // This response will include wind speed and direction
+        char charFromControlCenter [9900]; // char array of what we got back from ControlCenter
+        zmq_recv (m_sim.zmq_requester, charFromControlCenter, 9900, 0);
+        // Show what is in the response
+        amrex::Print() << "initial response from control center: [" << charFromControlCenter << "] \n";
+
+        amrex::Real wind_speed;
+        amrex::Real wind_direction;
+
+        // Unpack the values from the control center using a string stream
+        std::stringstream ss(charFromControlCenter);
+        ss >> wind_speed;  // This seems to work, I'm not positive it should?  wind_speed is a float but ss is a string?  maybe c++ magic?
+        ss >> wind_direction; // This seems to work, I'm not positive it should?  wind_speed is a float but ss is a string?  maybe c++ magic?
+        std::cout << "wind speed: " << wind_speed << "\n";
+        std::cout << "wind direction: " << wind_direction << "\n";
+
+        const amrex::Real wind_direction_radian = utils::radians(wind_direction);
+        const amrex::Real tvx = wind_speed*std::cos(wind_direction_radian);
+        const amrex::Real tvy = wind_speed*std::sin(wind_direction_radian);
+        amrex::Print() << "target velocities: " << tvx << ' ' << tvy << std::endl;
+
+        m_abl_forcing->set_target_velocities(tvx,tvy);
         m_abl_forcing->set_mean_velocities(vx, vy);
     }
 
@@ -139,6 +166,45 @@ void ABL::post_advance_work()
 {
     m_stats->post_advance_work();
     m_bndry_plane->post_advance_work();
+
+    // Declare an array of turbine powers
+    const int num_turbines = 4;
+    float turbine_power_array[num_turbines];
+    amrex::Real wind_speed{0.0};
+
+    amrex::Real vx{0.0};
+    amrex::Real vy{0.0};
+
+    if (m_abl_forcing != nullptr) {
+        const amrex::Real zh = m_abl_forcing->forcing_height();
+        const auto& vel_pa = m_stats->vel_profile();
+        vx = vel_pa.line_average_interpolated(zh, 0);
+        vy = vel_pa.line_average_interpolated(zh, 1);
+        wind_speed = std::sqrt(vx*vx+vy*vy);
+    }
+
+    turbine_power_array[0] = wind_speed * wind_speed * wind_speed + 100.0;
+    turbine_power_array[1] = wind_speed * wind_speed * wind_speed + 50.0;
+    turbine_power_array[2] = wind_speed * wind_speed * wind_speed * 3/5 + 50;
+    turbine_power_array[3] = wind_speed * wind_speed * wind_speed * 3/5;
+
+    const amrex::Real wind_direction = std::atan2(vy,vx);
+    std::stringstream ssToControlCenter; // stringStream used to construct strToSSC
+    ssToControlCenter << m_sim.time().time_index() << " "; // First entry is timestep
+    ssToControlCenter << wind_speed << " "; // First entry is wind_speed
+    ssToControlCenter << utils::degrees(wind_direction); // First entry is wind_direction
+    // Next the turbine information
+    for (int i = 0; i < num_turbines; i++){
+        ssToControlCenter << " " << turbine_power_array[i];
+    }
+    std::string strToControlCenter = ssToControlCenter.str(); //Convert to a string
+    std::cout << "message to control center: [" << strToControlCenter << "] \n";
+
+    // Send the data to the control center
+    zmq_send (m_sim.zmq_requester, strToControlCenter.c_str(), 9900, 0);
+
+
+
 }
 
 } // namespace amr_wind

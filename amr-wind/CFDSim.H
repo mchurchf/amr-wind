@@ -111,6 +111,9 @@ public:
     void activate_mesh_map();
 
     bool has_mesh_mapping() const { return m_mesh_mapping; }
+    void *zmq_context;
+    void *zmq_requester;
+
 
 private:
     amrex::AmrCore& m_mesh;
