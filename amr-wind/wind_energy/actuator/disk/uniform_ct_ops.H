@@ -150,21 +150,35 @@ struct ComputeForceOp<UniformCt, ActSrcDisk>
 
         if(data.info().is_root_proc) {
 
-            std::stringstream ssToControlCenter;
-
             const amrex::Real ct = ddata.current_ct;
             const amrex::Real cp = 0.5*(ct + ct*std::sqrt(1.0-ct));
+            const amrex::Real area = amr_wind::utils::pi()*0.25*ddata.diameter*ddata.diameter;
+            const amrex::Real power = cp * 0.5 * rho * uInfSqr * uInfSqr * uInfSqr * area;
 
-            ssToControlCenter << data.info().id << " " << cp;
-            std::string strToControlCenter = ssToControlCenter.str();
+            std::ofstream f;
+            const std::string& filename = amrex::Concatenate("t_", data.info().id, 4);
 
-            std::cout << "message to control center: [" << strToControlCenter << "] \n";
-
-            int zmq_success = zmq_send (data.sim().zmq_requester, strToControlCenter.c_str(), 9900, 0);
-
-            if(zmq_success != 0) {
-                std::cout << "zmq failed to send message " << data.info().root_proc << std::endl;
+            const int tindex = data.sim().time().time_index();
+            std::cout  << "tindex: " << tindex << " root proc: " <<  data.info().root_proc << " power: " << power << std::endl;
+            if(tindex == 0){
+                f.open(filename.c_str(), std::ios_base::out);
+            } else {
+                f.open(filename.c_str(), std::ios_base::app);
             }
+            f << data.sim().time().time_index() <<  " " << power << std::endl;
+            f.close();
+
+//            std::stringstream ssToControlCenter;
+//            ssToControlCenter << "turbine_power " << data.sim().time().time_index() << " " << data.info().id << " " << power;
+//            std::string strToControlCenter = ssToControlCenter.str();
+//
+//            std::cout << "message to control center: [" << strToControlCenter << "] \n";
+//
+//            int zmq_success = zmq_send (data.sim().zmq_requester, strToControlCenter.c_str(), 9900, 0);
+//
+//            if(zmq_success != 0) {
+//                std::cout << "zmq failed to send message " << data.info().root_proc << ' ' << zmq_success << std::endl;
+//            }
         }
 
         const int npts = ddata.num_force_pts;
