@@ -5,6 +5,7 @@
 #include "amr-wind/wind_energy/actuator/actuator_ops.H"
 #include "amr-wind/utilities/tensor_ops.H"
 #include "amr-wind/utilities/linear_interpolation.H"
+#include <zmq.h>
 
 namespace amr_wind {
 namespace actuator {
@@ -146,6 +147,25 @@ struct ComputeForceOp<UniformCt, ActSrcDisk>
         ddata.current_ct = ::amr_wind::interp::linear(
             ddata.table_velocity, ddata.thrust_coeff,
             std::sqrt(std::abs(uInfSqr)));
+
+        if(data.info().is_root_proc) {
+
+            std::stringstream ssToControlCenter;
+
+            const amrex::Real ct = ddata.current_ct;
+            const amrex::Real cp = 0.5*(ct + ct*std::sqrt(1.0-ct));
+
+            ssToControlCenter << data.info().id << " " << cp;
+            std::string strToControlCenter = ssToControlCenter.str();
+
+            std::cout << "message to control center: [" << strToControlCenter << "] \n";
+
+            int zmq_success = zmq_send (data.sim().zmq_requester, strToControlCenter.c_str(), 9900, 0);
+
+            if(zmq_success != 0) {
+                std::cout << "zmq failed to send message " << data.info().root_proc << std::endl;
+            }
+        }
 
         const int npts = ddata.num_force_pts;
         const amrex::Real aeroPressure = 0.5 * uInfSqr * rho * ddata.current_ct;

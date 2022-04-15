@@ -127,7 +127,9 @@ void ABL::pre_advance_work()
         // Wait for a response from control center
         // This response will include wind speed and direction
         char charFromControlCenter [9900]; // char array of what we got back from ControlCenter
-        zmq_recv (m_sim.zmq_requester, charFromControlCenter, 9900, 0);
+        if(amrex::ParallelDescriptor::IOProcessor()){
+            zmq_recv (m_sim.zmq_requester, charFromControlCenter, 9900, 0);
+        }
         // Show what is in the response
         amrex::Print() << "initial response from control center: [" << charFromControlCenter << "] \n";
 
@@ -201,7 +203,9 @@ void ABL::post_advance_work()
     std::cout << "message to control center: [" << strToControlCenter << "] \n";
 
     // Send the data to the control center
-    zmq_send (m_sim.zmq_requester, strToControlCenter.c_str(), 9900, 0);
+    if(amrex::ParallelDescriptor::IOProcessor()){
+        zmq_send (m_sim.zmq_requester, strToControlCenter.c_str(), 9900, 0);
+    }
 
 
 

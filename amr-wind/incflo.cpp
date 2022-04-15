@@ -279,8 +279,10 @@ void incflo::Evolve()
     strToControlCenter = ssInitialCode.str(); //Convert to a string
     amrex::Print() << "initial message to control center: [" << strToControlCenter << "] \n";
     // Send the data to the control center
-    zmq_send (m_sim.zmq_requester, strToControlCenter.c_str(), 9900, 0);
-
+    if(amrex::ParallelDescriptor::IOProcessor()) {
+        zmq_send (m_sim.zmq_requester, strToControlCenter.c_str(), 9900, 0);
+    }
+    
     while (m_time.new_timestep()) {
         amrex::Real time0 = amrex::ParallelDescriptor::second();
 
