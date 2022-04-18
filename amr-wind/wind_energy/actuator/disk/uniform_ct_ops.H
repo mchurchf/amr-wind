@@ -144,6 +144,8 @@ struct ComputeForceOp<UniformCt, ActSrcDisk>
         const amrex::Real uInfSqr = (ddata.reference_velocity & normal) *
                                     (ddata.reference_velocity & normal);
 
+        const amrex::Real uInf = std::sqrt(uInfSqr);
+
         ddata.current_ct = ::amr_wind::interp::linear(
             ddata.table_velocity, ddata.thrust_coeff,
             std::sqrt(std::abs(uInfSqr)));
@@ -153,7 +155,7 @@ struct ComputeForceOp<UniformCt, ActSrcDisk>
             const amrex::Real ct = ddata.current_ct;
             const amrex::Real cp = 0.5*(ct + ct*std::sqrt(1.0-ct));
             const amrex::Real area = amr_wind::utils::pi()*0.25*ddata.diameter*ddata.diameter;
-            const amrex::Real power = cp * 0.5 * rho * uInfSqr * uInfSqr * uInfSqr * area;
+            const amrex::Real power = cp * 0.5 * rho * uInf * uInf * uInf * area;
 
             std::ofstream f;
             const std::string& filename = amrex::Concatenate("t_", data.info().id, 4);

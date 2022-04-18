@@ -130,6 +130,7 @@ void ABL::pre_advance_work()
         if(amrex::ParallelDescriptor::IOProcessor()){
             zmq_recv (m_sim.zmq_requester, charFromControlCenter, 9900, 0);
         }
+
         // Show what is in the response
         amrex::Print() << "initial response from control center: [" << charFromControlCenter << "] \n";
 
@@ -143,10 +144,35 @@ void ABL::pre_advance_work()
         std::cout << "wind speed: " << wind_speed << "\n";
         std::cout << "wind direction: " << wind_direction << "\n";
 
+        if(wind_direction > 180.0){
+            wind_direction -= 180.0;
+        }
+        else{
+            wind_direction += 180.0;
+        }
+        wind_direction = 90.0 - wind_direction;
+        if(wind_direction < 0.0){
+            wind_direction += 360.0;
+        }
+
         const amrex::Real wind_direction_radian = utils::radians(wind_direction);
-        const amrex::Real tvx = wind_speed*std::cos(wind_direction_radian);
-        const amrex::Real tvy = wind_speed*std::sin(wind_direction_radian);
+        amrex::Real tvx = wind_speed*std::cos(wind_direction_radian);
+        amrex::Real tvy = wind_speed*std::sin(wind_direction_radian);
         amrex::Print() << "target velocities: " << tvx << ' ' << tvy << std::endl;
+
+        amrex::ParallelDescriptor::Bcast(
+            &tvx, 1,
+            amrex::ParallelDescriptor::IOProcessorNumber(),
+            amrex::ParallelDescriptor::Communicator());
+
+        amrex::ParallelDescriptor::Bcast(
+            &tvy, 1,
+            amrex::ParallelDescriptor::IOProcessorNumber(),
+            amrex::ParallelDescriptor::Communicator());
+
+        m_abl_forcing->set_target_velocities(tvx,tvy);
+
+        m_abl_forcing->set_mean_velocities(vx, vy);
 
         m_abl_forcing->set_target_velocities(tvx,tvy);
         m_abl_forcing->set_mean_velocities(vx, vy);
