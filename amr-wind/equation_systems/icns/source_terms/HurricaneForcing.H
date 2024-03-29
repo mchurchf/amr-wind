@@ -57,6 +57,9 @@ private:
     //! Reference gradient wind zero height in metres
     amrex::Real m_Vzh{18000.};
 
+    //! Gradient wind radial decay zero height in metres
+    amrex::Real m_dVdRzh{18000.};
+
     //! Eye-wall radial distance
     amrex::Real m_R{40000.0}; // 40km is taken as the default value
 

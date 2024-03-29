@@ -35,6 +35,7 @@ HurricaneForcing::HurricaneForcing(const CFDSim& sim) : m_mesh(sim.mesh())
         pp.query("gradient_wind", m_V);
         pp.query("gradient_wind_radial_decay", m_dVdR);
         pp.query("gradient_wind_zero_height", m_Vzh);
+        pp.query("gradient_wind_radial_decay_zero_height", m_dVdRzh);
         pp.query("eyewall_radial_distance", m_R);
     }
 
@@ -58,6 +59,7 @@ void HurricaneForcing::operator()(
     const amrex::Real V = m_V;
     const amrex::Real dVdR = m_dVdR;
     const amrex::Real Vzh = m_Vzh;
+    const amrex::Real dVdRzh = m_dVdRzh;
     const amrex::Real f = m_coriolis_factor;
 
     // Mean velocity profile used to compute background hurricane forcing term
@@ -90,7 +92,7 @@ void HurricaneForcing::operator()(
 
         // Gradient velocities varying with height
         const amrex::Real V_z = V * (Vzh - ht) / Vzh;
-        const amrex::Real dVdR_z = dVdR * (Vzh - ht) / Vzh;
+        const amrex::Real dVdR_z = dVdR * (dVdRzh - ht) / dVdRzh;
         // Compute the LES terms as presented in George Bryan's paper
         const amrex::Real M1LES =
             umean * umean / R + vmean * V_z / R - (f * V_z + V_z * V_z / R);
