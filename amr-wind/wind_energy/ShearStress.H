@@ -211,11 +211,12 @@ struct ShearStressDonelan
         amrex::Real flux = 0.0;
         switch (alg_type) {
         case amr_wind::MOData::ThetaCalcType::HEAT_FLUX:
-            flux = temp_flux_surface;
+            flux = -temp_flux_surface;
           //std::cout << "In heat flux mode: flux = " << flux << std::endl;
             break;
         case amr_wind::MOData::ThetaCalcType::SURFACE_TEMPERATURE:
-            flux = 0.0012 * wspd_mean * (theta_surface - theta_mean);
+          //flux = 0.0012 * wspd_mean * (theta_surface - theta_mean);
+            flux = 0.0012 * wspd_mean * (theta_mean - theta_surface);
           //std::cout << "In surface temperature mode: flux = " << flux << std::endl;
             break;
         }

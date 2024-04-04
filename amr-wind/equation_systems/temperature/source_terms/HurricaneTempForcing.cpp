@@ -68,6 +68,7 @@ void HurricaneTempForcing::operator()(
                                    (ht - heights[il]);
         
         const amrex::Real dTdR_z = dTdR * (dTzh - ht) / dTzh;
+
         /*
         const amrex::Real vmean =
             vals[3 * il + 1] + ((vals[3 * ir + 1] - vals[3 * il + 1]) /
@@ -75,7 +76,14 @@ void HurricaneTempForcing::operator()(
                                    (ht - heights[il]);
         */
 
-        src_term(i, j, k) -= umean * dTdR_z;
+        src_term(i, j, k, 0) -= umean * dTdR_z;
+        /*
+        if ((i == 0) && (j == 0) && (k == 0)) {
+            amrex::Print(0) << "z = " << ht << "  dTdR(" << ht << ") = " << dTdR_z << 
+                              " Ur(" << ht << ") = " << umean << " -umean * dTdR_z = " << -umean * dTdR_z  << 
+                              "src_term(" << i << "," << j << "," << k << ") = " << src_term(i, j, k, 0) << std::endl;
+        }
+        */
     });
 }
 
