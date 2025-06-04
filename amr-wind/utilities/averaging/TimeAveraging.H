@@ -91,17 +91,17 @@ private:
     //! Time to start averaging the fields
     amrex::Real m_start_time{0.0};
 
+    //! Time step when field averaging ends
+    int m_stop_step{std::numeric_limits<int>::max()};
+
     //! Time to stop averaging the fields
     amrex::Real m_stop_time{std::numeric_limits<amrex::Real>::max()};
 
     //! Time averaging window (in seconds)
-    amrex::Real m_filter{0.0};
-
-    //! Time averaging interval (in time steps)
-    int m_interval{1};
+    amrex::Real m_filter{std::numeric_limits<amrex::Real>::max()};
 
     //! Time averaging time interval (in seconds)
-    amrex::Real m_time_interval{-1.};
+    amrex::Real m_time_interval{-1.0};
 
     //! Accumulated averaging time interval
     amrex::Real m_accumulated_avg_time_interval{0.};
